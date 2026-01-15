@@ -94,11 +94,11 @@ ${competencyScores.map(c => `- ${c.name}: ${c.score.toFixed(2)}/4.0`).join('\n')
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1"><ManagerLeaderboard managers={managerSummaries} onSelectManager={setSelectedManager} selectedManager={selectedManager?.manager_name} /></div>
           <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               <CompetencyRadar competencies={competencyScores} />
               <ScoreDistributionChart distribution={scoreDistribution} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               <RelationshipPieChart distribution={relationshipDistribution} />
               <FeedbackThemes themes={feedbackThemes} />
             </div>
