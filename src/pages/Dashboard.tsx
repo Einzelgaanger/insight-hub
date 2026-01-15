@@ -77,7 +77,7 @@ ${competencyScores.map(c => `- ${c.name}: ${c.score.toFixed(2)}/4.0`).join('\n')
             <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
             <ExportButton managers={managerSummaries} responses={responses} />
             <Button onClick={() => setChatOpen(true)} className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">
-              <Sparkles className="w-4 h-4" /> AI Insights
+              <Sparkles className="w-4 h-4" /> Analytics Copilot
             </Button>
             <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
           </div>

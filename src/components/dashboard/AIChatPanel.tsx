@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Send, Sparkles, X, Loader2 } from 'lucide-react';
+import { Send, Sparkles, X, Loader2, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatMessage, InsightSuggestion } from '@/types/appraisal';
@@ -23,18 +23,42 @@ interface AIChatPanelProps {
   dataContext: string;
 }
 
+// Format AI response to clean up markdown artifacts
+const formatResponse = (text: string): string => {
+  return text
+    // Remove ** bold markers and replace with clean text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    // Remove * italic markers
+    .replace(/\*([^*]+)\*/g, '$1')
+    // Remove ### headers markers
+    .replace(/^###\s*/gm, '')
+    // Remove ## headers markers
+    .replace(/^##\s*/gm, '')
+    // Remove # headers markers
+    .replace(/^#\s*/gm, '')
+    // Clean up bullet points for consistency
+    .replace(/^\s*[-•]\s*/gm, '• ')
+    // Remove excessive newlines
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const [visibleSuggestions, setVisibleSuggestions] = useState<number[]>([0, 1, 2]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Rotate suggestions with animation
   useEffect(() => {
     const interval = setInterval(() => {
-      setSuggestionIndex(prev => (prev + 1) % INSIGHT_SUGGESTIONS.length);
-    }, 3000);
+      setVisibleSuggestions(prev => {
+        const next = prev.map(i => (i + 1) % INSIGHT_SUGGESTIONS.length);
+        return next;
+      });
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
@@ -98,7 +122,7 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
               if (content) {
                 assistantContent += content;
                 setMessages(prev => prev.map(m => 
-                  m.id === assistantMessage.id ? { ...m, content: assistantContent } : m
+                  m.id === assistantMessage.id ? { ...m, content: formatResponse(assistantContent) } : m
                 ));
               }
             } catch {}
@@ -130,10 +154,10 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
           <div className="p-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/10 to-accent/10">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/20">
-                <Sparkles className="w-5 h-5 text-primary" />
+                <Brain className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold">AI Analytics Assistant</h3>
+                <h3 className="font-semibold">Analytics Copilot</h3>
                 <p className="text-xs text-muted-foreground">Ask anything about the data</p>
               </div>
             </div>
@@ -142,47 +166,93 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
             </Button>
           </div>
 
-          {/* Suggestions Carousel */}
+          {/* Animated Suggestions - Always visible when no messages */}
           {messages.length === 0 && (
-            <div className="p-4 border-b border-border/50">
-              <p className="text-xs text-muted-foreground mb-3">Try asking:</p>
-              <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-2">
-                {INSIGHT_SUGGESTIONS.slice(0, 4).map((s, i) => (
-                  <motion.button
-                    key={s.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.1 }}
-                    onClick={() => sendMessage(s.question)}
-                    className="insight-tag whitespace-nowrap flex-shrink-0"
-                  >
-                    {s.question}
-                  </motion.button>
+            <div className="p-6 flex-1 flex flex-col items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center mb-8"
+              >
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-primary" />
+                </div>
+                <h4 className="text-lg font-medium mb-2">What would you like to know?</h4>
+                <p className="text-sm text-muted-foreground">Ask questions about manager performance, feedback trends, or comparisons</p>
+              </motion.div>
+
+              {/* Floating Animated Suggestions */}
+              <div className="w-full space-y-3">
+                <AnimatePresence mode="popLayout">
+                  {visibleSuggestions.map((suggestionIdx, i) => {
+                    const suggestion = INSIGHT_SUGGESTIONS[suggestionIdx];
+                    return (
+                      <motion.button
+                        key={`${suggestion.id}-${suggestionIdx}`}
+                        initial={{ opacity: 0, x: 50, scale: 0.9 }}
+                        animate={{ 
+                          opacity: 1, 
+                          x: 0, 
+                          scale: 1,
+                          transition: { delay: i * 0.1 }
+                        }}
+                        exit={{ opacity: 0, x: -50, scale: 0.9 }}
+                        whileHover={{ scale: 1.02, x: 4 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => sendMessage(suggestion.question)}
+                        className="w-full p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50 text-left hover:border-primary/50 hover:from-primary/10 hover:to-accent/10 transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-medium text-primary">
+                              {suggestion.category.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="text-sm">{suggestion.question}</span>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+
+              {/* Indicator dots */}
+              <div className="flex gap-1.5 mt-6">
+                {INSIGHT_SUGGESTIONS.map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full transition-colors duration-300",
+                      visibleSuggestions.includes(i) ? "bg-primary" : "bg-muted-foreground/30"
+                    )}
+                  />
                 ))}
               </div>
             </div>
           )}
 
-          {/* Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
-            {messages.map((msg, i) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={cn('chat-bubble', msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai')}
-              >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              </motion.div>
-            ))}
-            {loading && messages[messages.length - 1]?.role === 'user' && (
-              <div className="chat-bubble chat-bubble-ai flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Analyzing...</span>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+          {/* Messages - Only show when there are messages */}
+          {messages.length > 0 && (
+            <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn('chat-bubble', msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai')}
+                >
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                </motion.div>
+              ))}
+              {loading && messages[messages.length - 1]?.role === 'user' && (
+                <div className="chat-bubble chat-bubble-ai flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Analyzing...</span>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
 
           {/* Input */}
           <div className="p-4 border-t border-border">
