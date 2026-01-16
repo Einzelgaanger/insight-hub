@@ -41,9 +41,8 @@ const CustomTick = ({ payload, x, y, textAnchor, ...rest }: any) => {
           x={0}
           y={index * 12 - (displayLines.length - 1) * 6}
           textAnchor={textAnchor}
-          fill="hsl(var(--muted-foreground))"
+          style={{ fill: 'hsl(var(--muted-foreground))' }}
           fontSize={10}
-          {...rest}
         >
           {line}
         </text>
