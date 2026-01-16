@@ -4,6 +4,7 @@ const allowedOrigins = [
   "https://three60appraisal.onrender.com",
   "http://localhost:5173",
   "http://localhost:8080",
+  "https://id-preview--13fa90b5-15b3-4b0e-96ac-5bc3269f79e4.lovable.app",
 ];
 
 function getCorsHeaders(origin: string | null) {
